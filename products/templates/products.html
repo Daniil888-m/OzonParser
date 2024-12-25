@@ -1,0 +1,116 @@
+<!-- products/templates/add_product.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ozon Parser</title>
+	<link rel="icon" href="https://img.icons8.com/pulsar-gradient/48/sound-recording-copyright.png" alt="sound-recording-copyright" type="image/x-icon">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+	{% load static %}
+	<link rel="stylesheet" href="{% static 'css/normalize.css' %}">
+	<link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+	<main>
+		<header>
+			<form id="add_product_form" method="POST">
+				{% csrf_token %}
+
+				<input type="hidden" name="_method" value="POST">
+				<label for="url">
+					<input id="add_input" type="text" name="ozon" id="ozon" placeholder="Ввод ссылки озон товара">
+				</label>
+				<button type="submit" id="submit">Добавить</button>
+			</form>
+
+		</header>
+		<section class="products">
+			{% for product in all_products %}
+			<div class="product">
+				<strong class="product_name" title="{{ product.name }}"><a href="{{ product.url }}" target="_blank">{{ product.name }}</a></strong>
+				<br>
+				<strong class="align_start">Начальная цена:</strong>
+				<p>{{ product.start_price }}₽</p>
+				<strong class="align_start">При последней проверке:</strong>
+				<p>{{ product.price }}₽</p>
+				<strong>Купить при падении на:</strong>
+				<form id="add_procent_form" method="POST">
+					{% csrf_token %}
+					<input type="hidden" name="_method" value="UPDATE">
+					<input type="hidden" name="url" value="{{ product.url }}">
+					<label for="procent">
+						<input id="add_procent" type="text" name="procent" id="procent" placeholder="%" value="{{product.percent}}%">
+					</label>
+					<button type="submit" id="accept"><svg width="55" height="55" viewBox="0 0 55 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M5 26.5L25 46.5L50 5" stroke="white" stroke-width="10" stroke-linecap="round" />
+						</svg></button>
+				</form>
+				<strong
+					class="{% if product.cur_percent > 0 %} procent_plus {% endif %} {% if product.cur_percent < 0 %} procent_minus {% endif %} {% if product.cur_percent == 0 %} zero_procent {% endif %}">
+					{{product.cur_percent}}%
+				</strong>
+				<form id="del_product" method="POST">
+					{% csrf_token %}
+					<input type="hidden" name="_method" value="DELETE">
+					<input type="hidden" name="url" value="{{ product.url }}">
+
+					<button type="submit" id="delete">Удалить</button>
+				</form>
+			</div>
+			{% empty %}
+			<p>Пока нет добавленных товаров.</p>
+			{% endfor %}
+		</section>
+	</main>
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			const inputElements = document.querySelectorAll("#add_procent");
+
+			inputElements.forEach(input => {
+				input.addEventListener("input", () => {
+					// Удаляем все, кроме чисел
+					let value = input.value.replace(/\D/g, "");
+
+					// Ограничиваем значение до 100
+					if (parseInt(value, 10) > 100) {
+						value = "100";
+					}
+
+					// Добавляем знак `%`, если есть число
+					if (value !== "") {
+						input.value = value + "%";
+					} else {
+						input.value = ""; // Если ничего не введено, оставляем пустым
+					}
+				});
+
+				input.addEventListener("keydown", (e) => {
+					// Разрешаем только клавиши, которые нужны для чисел
+					const allowedKeys = ["Backspace", "ArrowLeft", "ArrowRight", "Delete", "Tab"];
+					if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key)) {
+						e.preventDefault();
+					}
+					if (e.key === "Backspace") {
+						let value = input.value.replace("%", ""); // Убираем % временно
+						value = value.slice(0, -1); // Удаляем последний символ
+						if (value === "") {
+							e.preventDefault(); // Блокируем пустое поле с %
+							input.value = "";
+						} else {
+							input.value = value + "%"; // Добавляем % обратно
+							e.preventDefault(); // Предотвращаем стандартное удаление
+						}
+					}
+				});
+			});
+		});
+
+	</script>
+</body>
+
+</html>
